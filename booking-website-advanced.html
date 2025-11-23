@@ -444,6 +444,7 @@
                                     <th>บริการ</th>
                                     <th>วัน เวลา</th>
                                     <th>เบอร์โทร</th>
+                                    <th>จัดการ</th>
                                 </tr>
                             </thead>
                             <tbody id="bookingsBody"></tbody>
@@ -460,6 +461,7 @@
         let bookings = JSON.parse(localStorage.getItem('bookings')) || [];
         let selectedTime = null;
         let googleSheetURL = ''; // ใส่ URL ของ Google Apps Script ตรงนี้
+        let isLoadingServices = false;
 
         // ⚠️ วิธีหา Google Apps Script URL:
         // 1. ไปที่ script.editor.google.com
@@ -469,10 +471,47 @@
         
         // ⬇️ Code สำหรับ Google Apps Script:
         /*
+        // ===== Google Apps Script Code =====
+        // สร้าง Sheet 2 แท็บ: "Bookings" และ "Services"
+
+        var SHEET_ID = 'YOUR_SHEET_ID'; // ใส่ ID ของ Google Sheet
+        var ADMIN_EMAIL = 'admin@example.com'; // ใส่อีเมลแอดมินที่ต้องการรับแจ้งเตือน
+
+        function doGet(e) {
+          var action = e.parameter.action;
+
+          if (action === 'getServices') {
+            return getServices();
+          }
+
+          return ContentService.createTextOutput(JSON.stringify({error: "Invalid action"}))
+            .setMimeType(ContentService.MimeType.JSON);
+        }
+
         function doPost(e) {
-          var sheet = SpreadsheetApp.openById('YOUR_SHEET_ID').getSheetByName('Bookings');
           var data = JSON.parse(e.postData.contents);
-          
+          var action = data.action;
+
+          if (action === 'addBooking') {
+            return addBooking(data);
+          } else if (action === 'cancelBooking') {
+            return cancelBooking(data);
+          } else if (action === 'addService') {
+            return addService(data);
+          } else if (action === 'updateService') {
+            return updateService(data);
+          } else if (action === 'deleteService') {
+            return deleteService(data);
+          }
+
+          return ContentService.createTextOutput(JSON.stringify({error: "Invalid action"}))
+            .setMimeType(ContentService.MimeType.JSON);
+        }
+
+        // ===== BOOKING FUNCTIONS =====
+        function addBooking(data) {
+          var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Bookings');
+
           sheet.appendRow([
             new Date(),
             data.name,
@@ -481,30 +520,252 @@
             data.serviceName,
             data.date,
             data.time,
-            data.notes
+            data.notes,
+            data.price,
+            data.duration
           ]);
-          
+
           // ส่ง Email ให้ลูกค้า
-          MailApp.sendEmail(
-            data.email,
-            '✓ การจองคิวสำเร็จ - ' + data.serviceName,
-            'สวัสดี ' + data.name + '\n\n' +
-            'การจองคิวของคุณสำเร็จแล้ว\n\n' +
-            'บริการ: ' + data.serviceName + '\n' +
-            'วัน เวลา: ' + data.date + ' เวลา ' + data.time + '\n' +
-            'ระยะเวลา: ' + data.duration + ' นาที\n' +
-            'ราคา: ฿' + data.price + '\n\n' +
-            'ขอบคุณที่ใช้บริการของเรา!'
-          );
-          
+          try {
+            MailApp.sendEmail(
+              data.email,
+              '✓ การจองคิวสำเร็จ - ' + data.serviceName,
+              'สวัสดี ' + data.name + '\n\n' +
+              'การจองคิวของคุณสำเร็จแล้ว\n\n' +
+              'บริการ: ' + data.serviceName + '\n' +
+              'วัน เวลา: ' + data.date + ' เวลา ' + data.time + '\n' +
+              'ระยะเวลา: ' + data.duration + ' นาที\n' +
+              'ราคา: ฿' + data.price + '\n\n' +
+              'ขอบคุณที่ใช้บริการของเรา!'
+            );
+          } catch(err) {
+            console.log('Customer email error: ' + err);
+          }
+
+          // ส่ง Email แจ้งเตือนแอดมิน
+          try {
+            MailApp.sendEmail(
+              ADMIN_EMAIL,
+              '🔔 มีการจองคิวใหม่ - ' + data.serviceName,
+              '📅 มีการจองคิวใหม่เข้ามา!\n\n' +
+              '👤 ชื่อลูกค้า: ' + data.name + '\n' +
+              '📱 เบอร์โทร: ' + data.phone + '\n' +
+              '📧 อีเมล: ' + data.email + '\n\n' +
+              '💼 บริการ: ' + data.serviceName + '\n' +
+              '📆 วันที่: ' + data.date + '\n' +
+              '⏰ เวลา: ' + data.time + '\n' +
+              '⏱ ระยะเวลา: ' + data.duration + ' นาที\n' +
+              '💰 ราคา: ฿' + data.price + '\n\n' +
+              '📝 หมายเหตุ: ' + (data.notes || '-') + '\n\n' +
+              '---\n' +
+              'ข้อมูลนี้ถูกบันทึกลง Google Sheets แล้ว'
+            );
+          } catch(err) {
+            console.log('Admin email error: ' + err);
+          }
+
           return ContentService.createTextOutput(JSON.stringify({status: "success"}))
             .setMimeType(ContentService.MimeType.JSON);
         }
+
+        // ===== CANCEL BOOKING FUNCTION =====
+        function cancelBooking(data) {
+          var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Bookings');
+          var dataRange = sheet.getDataRange().getValues();
+          var cancelledBooking = null;
+
+          // หา booking ที่ต้องการยกเลิก (ใช้ email + date + time เป็น key)
+          for (var i = 1; i < dataRange.length; i++) {
+            if (dataRange[i][3] == data.email &&
+                dataRange[i][5] == data.date &&
+                dataRange[i][6] == data.time) {
+              cancelledBooking = {
+                name: dataRange[i][1],
+                phone: dataRange[i][2],
+                email: dataRange[i][3],
+                serviceName: dataRange[i][4],
+                date: dataRange[i][5],
+                time: dataRange[i][6]
+              };
+              sheet.deleteRow(i + 1);
+              break;
+            }
+          }
+
+          if (!cancelledBooking) {
+            return ContentService.createTextOutput(JSON.stringify({status: "error", message: "Booking not found"}))
+              .setMimeType(ContentService.MimeType.JSON);
+          }
+
+          // ส่ง Email แจ้งลูกค้าว่ายกเลิกสำเร็จ
+          try {
+            MailApp.sendEmail(
+              cancelledBooking.email,
+              '❌ ยกเลิกการจองคิวสำเร็จ - ' + cancelledBooking.serviceName,
+              'สวัสดี ' + cancelledBooking.name + '\n\n' +
+              'การจองคิวของคุณได้ถูกยกเลิกแล้ว\n\n' +
+              'บริการ: ' + cancelledBooking.serviceName + '\n' +
+              'วัน เวลา: ' + cancelledBooking.date + ' เวลา ' + cancelledBooking.time + '\n\n' +
+              'หากต้องการจองใหม่ กรุณาเข้าเว็บไซต์ของเรา\n\n' +
+              'ขอบคุณครับ/ค่ะ'
+            );
+          } catch(err) {
+            console.log('Customer cancel email error: ' + err);
+          }
+
+          // ส่ง Email แจ้งแอดมินว่ามีการยกเลิก
+          try {
+            MailApp.sendEmail(
+              ADMIN_EMAIL,
+              '⚠️ มีการยกเลิกนัดหมาย - ' + cancelledBooking.serviceName,
+              '❌ มีการยกเลิกนัดหมาย!\n\n' +
+              '👤 ชื่อลูกค้า: ' + cancelledBooking.name + '\n' +
+              '📱 เบอร์โทร: ' + cancelledBooking.phone + '\n' +
+              '📧 อีเมล: ' + cancelledBooking.email + '\n\n' +
+              '💼 บริการ: ' + cancelledBooking.serviceName + '\n' +
+              '📆 วันที่: ' + cancelledBooking.date + '\n' +
+              '⏰ เวลา: ' + cancelledBooking.time + '\n\n' +
+              '---\n' +
+              'ข้อมูลนี้ถูกลบออกจาก Google Sheets แล้ว'
+            );
+          } catch(err) {
+            console.log('Admin cancel email error: ' + err);
+          }
+
+          return ContentService.createTextOutput(JSON.stringify({status: "success"}))
+            .setMimeType(ContentService.MimeType.JSON);
+        }
+
+        // ===== SERVICE FUNCTIONS =====
+        function getServices() {
+          var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Services');
+          var data = sheet.getDataRange().getValues();
+          var services = [];
+
+          // Skip header row (row 0)
+          for (var i = 1; i < data.length; i++) {
+            if (data[i][0]) { // ถ้ามี ID
+              services.push({
+                id: data[i][0],
+                name: data[i][1],
+                desc: data[i][2],
+                price: parseFloat(data[i][3]),
+                duration: parseInt(data[i][4])
+              });
+            }
+          }
+
+          return ContentService.createTextOutput(JSON.stringify({status: "success", services: services}))
+            .setMimeType(ContentService.MimeType.JSON);
+        }
+
+        function addService(data) {
+          var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Services');
+
+          sheet.appendRow([
+            data.id,
+            data.name,
+            data.desc,
+            data.price,
+            data.duration,
+            new Date() // created_at
+          ]);
+
+          return ContentService.createTextOutput(JSON.stringify({status: "success"}))
+            .setMimeType(ContentService.MimeType.JSON);
+        }
+
+        function updateService(data) {
+          var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Services');
+          var dataRange = sheet.getDataRange().getValues();
+
+          for (var i = 1; i < dataRange.length; i++) {
+            if (dataRange[i][0] == data.id) {
+              sheet.getRange(i + 1, 2).setValue(data.name);
+              sheet.getRange(i + 1, 3).setValue(data.desc);
+              sheet.getRange(i + 1, 4).setValue(data.price);
+              sheet.getRange(i + 1, 5).setValue(data.duration);
+              sheet.getRange(i + 1, 7).setValue(new Date()); // updated_at
+              break;
+            }
+          }
+
+          return ContentService.createTextOutput(JSON.stringify({status: "success"}))
+            .setMimeType(ContentService.MimeType.JSON);
+        }
+
+        function deleteService(data) {
+          var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Services');
+          var dataRange = sheet.getDataRange().getValues();
+
+          for (var i = 1; i < dataRange.length; i++) {
+            if (dataRange[i][0] == data.id) {
+              sheet.deleteRow(i + 1);
+              break;
+            }
+          }
+
+          return ContentService.createTextOutput(JSON.stringify({status: "success"}))
+            .setMimeType(ContentService.MimeType.JSON);
+        }
+
+        // ===== SETUP FUNCTION =====
+        // รันครั้งแรกเพื่อสร้าง Header
+        function setupSheets() {
+          var ss = SpreadsheetApp.openById(SHEET_ID);
+
+          // สร้าง Bookings sheet
+          var bookingsSheet = ss.getSheetByName('Bookings');
+          if (!bookingsSheet) {
+            bookingsSheet = ss.insertSheet('Bookings');
+          }
+          bookingsSheet.getRange(1, 1, 1, 10).setValues([[
+            'Timestamp', 'Name', 'Phone', 'Email', 'Service', 'Date', 'Time', 'Notes', 'Price', 'Duration'
+          ]]);
+
+          // สร้าง Services sheet
+          var servicesSheet = ss.getSheetByName('Services');
+          if (!servicesSheet) {
+            servicesSheet = ss.insertSheet('Services');
+          }
+          servicesSheet.getRange(1, 1, 1, 7).setValues([[
+            'ID', 'Name', 'Description', 'Price', 'Duration', 'Created', 'Updated'
+          ]]);
+        }
+        // ===== END Google Apps Script Code =====
         */
 
         // Initialize
-        loadServices();
+        initializeApp();
         setMinDate();
+
+        async function initializeApp() {
+            // โหลดบริการจาก Google Sheets ก่อน (ถ้ามี URL)
+            if (googleSheetURL) {
+                await loadServicesFromSheet();
+            }
+            loadServices();
+        }
+
+        async function loadServicesFromSheet() {
+            if (!googleSheetURL || isLoadingServices) return;
+
+            isLoadingServices = true;
+            try {
+                const response = await fetch(googleSheetURL + '?action=getServices');
+                const result = await response.json();
+
+                if (result.status === 'success' && result.services) {
+                    services = result.services;
+                    localStorage.setItem('services', JSON.stringify(services));
+                    console.log('Loaded services from Google Sheets:', services.length);
+                }
+            } catch (err) {
+                console.log('Using local services (Google Sheets not available):', err);
+            } finally {
+                isLoadingServices = false;
+            }
+        }
 
         // Event Listeners
         document.getElementById('serviceForm').addEventListener('submit', addService);
@@ -542,9 +803,9 @@
             document.getElementById('appointmentDate').min = today;
         }
 
-        function addService(e) {
+        async function addService(e) {
             e.preventDefault();
-            
+
             const name = document.getElementById('serviceName').value.trim();
             const desc = document.getElementById('serviceDesc').value.trim();
             const price = parseFloat(document.getElementById('servicePrice').value);
@@ -565,7 +826,22 @@
 
             services.push(service);
             localStorage.setItem('services', JSON.stringify(services));
-            
+
+            // ส่งไป Google Sheets (ถ้าตั้ง URL ไว้)
+            if (googleSheetURL) {
+                try {
+                    await fetch(googleSheetURL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'addService', ...service })
+                    });
+                    console.log('Service saved to Google Sheets');
+                } catch (err) {
+                    console.error('Error saving service to Google Sheets:', err);
+                }
+            }
+
             document.getElementById('serviceForm').reset();
             loadServices();
             showSuccess('เพิ่มบริการสำเร็จ');
@@ -633,10 +909,26 @@
             }
         }
 
-        function deleteService(id) {
+        async function deleteService(id) {
             if (confirm('ต้องการลบบริการนี้หรือไม่?')) {
                 services = services.filter(s => s.id !== id);
                 localStorage.setItem('services', JSON.stringify(services));
+
+                // ลบจาก Google Sheets (ถ้าตั้ง URL ไว้)
+                if (googleSheetURL) {
+                    try {
+                        await fetch(googleSheetURL, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'deleteService', id: id })
+                        });
+                        console.log('Service deleted from Google Sheets');
+                    } catch (err) {
+                        console.error('Error deleting service from Google Sheets:', err);
+                    }
+                }
+
                 loadServices();
                 showSuccess('ลบบริการสำเร็จ');
             }
@@ -708,7 +1000,7 @@
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify(booking)
+                        body: JSON.stringify({ action: 'addBooking', ...booking })
                     });
                     console.log('Sent to Google Sheet');
                 } catch (err) {
@@ -740,19 +1032,56 @@
             }
 
             body.innerHTML = '';
-            bookings.forEach(booking => {
+            bookings.forEach((booking, index) => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${booking.name}</td>
                     <td>${booking.serviceName}</td>
                     <td>${booking.date} ${booking.time}</td>
                     <td><small>${booking.phone}<br>${booking.email}</small></td>
+                    <td><button class="btn-delete" onclick="cancelBooking(${index})">ยกเลิก</button></td>
                 `;
                 body.appendChild(row);
             });
 
             list.style.display = 'block';
             noMsg.style.display = 'none';
+        }
+
+        async function cancelBooking(index) {
+            const booking = bookings[index];
+            if (!booking) return;
+
+            if (!confirm(`ต้องการยกเลิกนัดหมาย?\n\nชื่อ: ${booking.name}\nบริการ: ${booking.serviceName}\nวันที่: ${booking.date} เวลา ${booking.time}`)) {
+                return;
+            }
+
+            // ลบจาก localStorage
+            bookings.splice(index, 1);
+            localStorage.setItem('bookings', JSON.stringify(bookings));
+
+            // ส่งไป Google Sheets เพื่อยกเลิก (ถ้าตั้ง URL ไว้)
+            if (googleSheetURL) {
+                try {
+                    await fetch(googleSheetURL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'cancelBooking',
+                            email: booking.email,
+                            date: booking.date,
+                            time: booking.time
+                        })
+                    });
+                    console.log('Booking cancelled in Google Sheets');
+                } catch (err) {
+                    console.error('Error cancelling booking in Google Sheets:', err);
+                }
+            }
+
+            loadBookings();
+            showSuccess('ยกเลิกนัดหมายสำเร็จ');
         }
 
         function showSuccess(msg) {
