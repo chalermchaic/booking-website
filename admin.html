@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - ระบบจองคิว</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        header h1 {
+            color: #ff9800;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.15);
+            margin-bottom: 30px;
+        }
+
+        .card h2 {
+            color: #ff9800;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-bottom: 3px solid #ff9800;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #ff9800;
+            box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 152, 0, 0.4);
+        }
+
+        .btn-delete {
+            background: #ff6b6b;
+            padding: 6px 12px;
+            font-size: 0.9em;
+        }
+
+        .btn-delete:hover {
+            background: #ff5252;
+        }
+
+        .service-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #ff9800;
+            margin-bottom: 15px;
+        }
+
+        .service-item h3 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .service-item p {
+            color: #666;
+            font-size: 0.95em;
+            margin-bottom: 10px;
+        }
+
+        .success-msg {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #28a745;
+            display: none;
+        }
+
+        .success-msg.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            border: none;
+            background: none;
+            color: #666;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #ff9800;
+            border-bottom-color: #ff9800;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* Login Page */
+        .login-page {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: calc(100vh - 40px);
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .login-card h2 {
+            color: #ff9800;
+            margin-bottom: 10px;
+        }
+
+        .login-card p {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .login-error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .login-error.show {
+            display: block;
+        }
+
+        .admin-content {
+            display: none;
+        }
+
+        .admin-content.show {
+            display: block;
+        }
+
+        .logout-btn {
+            background: #6c757d;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            font-size: 0.9em;
+        }
+
+        .logout-btn:hover {
+            background: #5a6268;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2em;
+            }
+
+            .login-card {
+                margin: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Page -->
+        <div id="loginPage" class="login-page">
+            <div class="login-card">
+                <h2>Admin Login</h2>
+                <p>กรุณาใส่รหัสผ่านเพื่อเข้าสู่ระบบ</p>
+
+                <div id="loginError" class="login-error">
+                    รหัสผ่านไม่ถูกต้อง
+                </div>
+
+                <form id="loginForm">
+                    <div class="form-group">
+                        <input type="password" id="adminPassword" placeholder="รหัสผ่าน" required>
+                    </div>
+                    <button type="submit" style="width: 100%;">เข้าสู่ระบบ</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Admin Content (Hidden until login) -->
+        <div id="adminContent" class="admin-content">
+            <button class="logout-btn" onclick="logout()">ออกจากระบบ</button>
+
+            <header>
+                <h1>Admin Panel</h1>
+                <p>จัดการบริการและดูการจองคิว</p>
+            </header>
+
+            <div class="card">
+                <div class="success-msg" id="successMsg">สำเร็จ!</div>
+
+                <div class="tabs">
+                    <button class="tab active" data-tab="add-service">เพิ่มบริการใหม่</button>
+                    <button class="tab" data-tab="manage">จัดการบริการ</button>
+                    <button class="tab" data-tab="bookings">ดูการจองคิว</button>
+                </div>
+
+                <!-- เพิ่มบริการ -->
+                <div id="add-service" class="tab-content active">
+                    <form id="serviceForm">
+                        <div class="form-group">
+                            <label for="serviceName">ชื่อบริการ *</label>
+                            <input type="text" id="serviceName" placeholder="เช่น ตัดผม, นวด, ปรึกษา" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="serviceDesc">รายละเอียด *</label>
+                            <textarea id="serviceDesc" placeholder="อธิบายบริการนี้..." required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="servicePrice">ราคา (บาท) *</label>
+                            <input type="number" id="servicePrice" step="0.01" placeholder="0.00" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="serviceDuration">ระยะเวลา (นาที) *</label>
+                            <input type="number" id="serviceDuration" placeholder="30" min="15" required>
+                        </div>
+
+                        <button type="submit">เพิ่มบริการ</button>
+                    </form>
+                </div>
+
+                <!-- จัดการบริการ -->
+                <div id="manage" class="tab-content">
+                    <div id="servicesManage">
+                        <p style="color: #999;">ไม่มีบริการที่จัดการได้</p>
+                    </div>
+                </div>
+
+                <!-- ดูการจองคิว -->
+                <div id="bookings" class="tab-content">
+                    <div id="bookingsList" style="display: none;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ชื่อ</th>
+                                    <th>บริการ</th>
+                                    <th>วัน เวลา</th>
+                                    <th>เบอร์โทร</th>
+                                    <th>จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bookingsBody"></tbody>
+                        </table>
+                    </div>
+                    <p id="noBookings" style="color: #999;">ไม่มีการจองคิว</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== CONFIG =====
+        // ตั้งรหัสผ่าน Admin (เปลี่ยนได้ตามต้องการ)
+        const ADMIN_PASSWORD = 'admin123';
+
+        // ใส่ URL ของ Google Apps Script (เหมือนกับไฟล์หลัก)
+        let googleSheetURL = '';
+
+        // ===== STATE =====
+        let services = JSON.parse(localStorage.getItem('services')) || [];
+        let bookings = JSON.parse(localStorage.getItem('bookings')) || [];
+        let isLoggedIn = false;
+        let isLoadingServices = false;
+
+        // ===== INITIALIZE =====
+        checkLoginStatus();
+
+        function checkLoginStatus() {
+            const session = sessionStorage.getItem('adminLoggedIn');
+            if (session === 'true') {
+                isLoggedIn = true;
+                showAdminPanel();
+            }
+        }
+
+        // ===== LOGIN =====
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const password = document.getElementById('adminPassword').value;
+
+            if (password === ADMIN_PASSWORD) {
+                isLoggedIn = true;
+                sessionStorage.setItem('adminLoggedIn', 'true');
+                document.getElementById('loginError').classList.remove('show');
+                showAdminPanel();
+            } else {
+                document.getElementById('loginError').classList.add('show');
+            }
+        });
+
+        function logout() {
+            isLoggedIn = false;
+            sessionStorage.removeItem('adminLoggedIn');
+            document.getElementById('adminContent').classList.remove('show');
+            document.getElementById('loginPage').style.display = 'flex';
+            document.getElementById('adminPassword').value = '';
+        }
+
+        async function showAdminPanel() {
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('adminContent').classList.add('show');
+
+            // โหลดข้อมูลจาก Google Sheets
+            if (googleSheetURL) {
+                await loadServicesFromSheet();
+            }
+            loadServices();
+        }
+
+        // ===== SERVICES =====
+        async function loadServicesFromSheet() {
+            if (!googleSheetURL || isLoadingServices) return;
+
+            isLoadingServices = true;
+            try {
+                const response = await fetch(googleSheetURL + '?action=getServices');
+                const result = await response.json();
+
+                if (result.status === 'success' && result.services) {
+                    services = result.services;
+                    localStorage.setItem('services', JSON.stringify(services));
+                    console.log('Loaded services from Google Sheets:', services.length);
+                }
+            } catch (err) {
+                console.log('Using local services:', err);
+            } finally {
+                isLoadingServices = false;
+            }
+        }
+
+        document.getElementById('serviceForm').addEventListener('submit', addService);
+
+        async function addService(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('serviceName').value.trim();
+            const desc = document.getElementById('serviceDesc').value.trim();
+            const price = parseFloat(document.getElementById('servicePrice').value);
+            const duration = parseInt(document.getElementById('serviceDuration').value);
+
+            if (!name || !desc || !price || !duration) {
+                alert('กรุณากรอกข้อมูลให้ครบ');
+                return;
+            }
+
+            const service = {
+                id: Date.now(),
+                name,
+                desc,
+                price,
+                duration
+            };
+
+            services.push(service);
+            localStorage.setItem('services', JSON.stringify(services));
+
+            // ส่งไป Google Sheets
+            if (googleSheetURL) {
+                try {
+                    await fetch(googleSheetURL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'addService', ...service })
+                    });
+                } catch (err) {
+                    console.error('Error saving service:', err);
+                }
+            }
+
+            document.getElementById('serviceForm').reset();
+            loadServices();
+            showSuccess('เพิ่มบริการสำเร็จ');
+        }
+
+        function loadServices() {
+            const manage = document.getElementById('servicesManage');
+            manage.innerHTML = '';
+
+            if (services.length === 0) {
+                manage.innerHTML = '<p style="color: #999;">ยังไม่มีบริการ</p>';
+                return;
+            }
+
+            services.forEach(service => {
+                const manageItem = document.createElement('div');
+                manageItem.className = 'service-item';
+                manageItem.innerHTML = `
+                    <h3>${service.name}</h3>
+                    <p>${service.desc}</p>
+                    <p style="color: #ff9800; font-weight: 600;">฿${service.price.toFixed(2)} • ${service.duration} นาที</p>
+                    <div style="display: flex; gap: 8px; margin-top: 10px;">
+                        <button style="background: #e0e0e0; color: #333;" onclick="editService(${service.id})">แก้ไข</button>
+                        <button class="btn-delete" onclick="deleteService(${service.id})">ลบ</button>
+                    </div>
+                `;
+                manage.appendChild(manageItem);
+            });
+        }
+
+        function editService(id) {
+            const service = services.find(s => s.id === id);
+            if (service) {
+                document.getElementById('serviceName').value = service.name;
+                document.getElementById('serviceDesc').value = service.desc;
+                document.getElementById('servicePrice').value = service.price;
+                document.getElementById('serviceDuration').value = service.duration;
+                deleteService(id, true); // ลบแบบไม่ confirm
+                document.querySelector('[data-tab="add-service"]').click();
+                document.getElementById('serviceName').focus();
+            }
+        }
+
+        async function deleteService(id, skipConfirm = false) {
+            if (!skipConfirm && !confirm('ต้องการลบบริการนี้หรือไม่?')) {
+                return;
+            }
+
+            services = services.filter(s => s.id !== id);
+            localStorage.setItem('services', JSON.stringify(services));
+
+            // ลบจาก Google Sheets
+            if (googleSheetURL && !skipConfirm) {
+                try {
+                    await fetch(googleSheetURL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'deleteService', id: id })
+                    });
+                } catch (err) {
+                    console.error('Error deleting service:', err);
+                }
+            }
+
+            loadServices();
+            if (!skipConfirm) showSuccess('ลบบริการสำเร็จ');
+        }
+
+        // ===== BOOKINGS =====
+        function loadBookings() {
+            const list = document.getElementById('bookingsList');
+            const noMsg = document.getElementById('noBookings');
+            const body = document.getElementById('bookingsBody');
+
+            if (bookings.length === 0) {
+                list.style.display = 'none';
+                noMsg.style.display = 'block';
+                return;
+            }
+
+            body.innerHTML = '';
+            bookings.forEach((booking, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${booking.name}</td>
+                    <td>${booking.serviceName}</td>
+                    <td>${booking.date} ${booking.time}</td>
+                    <td><small>${booking.phone}<br>${booking.email}</small></td>
+                    <td><button class="btn-delete" onclick="cancelBooking(${index})">ยกเลิก</button></td>
+                `;
+                body.appendChild(row);
+            });
+
+            list.style.display = 'block';
+            noMsg.style.display = 'none';
+        }
+
+        async function cancelBooking(index) {
+            const booking = bookings[index];
+            if (!booking) return;
+
+            if (!confirm(`ต้องการยกเลิกนัดหมาย?\n\nชื่อ: ${booking.name}\nบริการ: ${booking.serviceName}\nวันที่: ${booking.date} เวลา ${booking.time}`)) {
+                return;
+            }
+
+            // ลบจาก localStorage
+            bookings.splice(index, 1);
+            localStorage.setItem('bookings', JSON.stringify(bookings));
+
+            // ส่งไป Google Sheets เพื่อยกเลิก
+            if (googleSheetURL) {
+                try {
+                    await fetch(googleSheetURL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'cancelBooking',
+                            email: booking.email,
+                            date: booking.date,
+                            time: booking.time
+                        })
+                    });
+                } catch (err) {
+                    console.error('Error cancelling booking:', err);
+                }
+            }
+
+            loadBookings();
+            showSuccess('ยกเลิกนัดหมายสำเร็จ');
+        }
+
+        // ===== TABS =====
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tabName).classList.add('active');
+
+                if (tabName === 'bookings') loadBookings();
+            });
+        });
+
+        // ===== UTILS =====
+        function showSuccess(msg) {
+            const el = document.getElementById('successMsg');
+            el.textContent = msg;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>

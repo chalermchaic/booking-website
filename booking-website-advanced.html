@@ -115,16 +115,6 @@
             box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
         }
 
-        .btn-delete {
-            background: #ff6b6b;
-            padding: 6px 12px;
-            font-size: 0.9em;
-        }
-
-        .btn-delete:hover {
-            background: #ff5252;
-        }
-
         .time-slots {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -221,66 +211,6 @@
             display: flex;
             justify-content: space-between;
             margin-bottom: 8px;
-            color: #333;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #e0e0e0;
-        }
-
-        .tab {
-            padding: 10px 20px;
-            border: none;
-            background: none;
-            color: #666;
-            font-weight: 600;
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s;
-        }
-
-        .tab.active {
-            color: #667eea;
-            border-bottom-color: #667eea;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .admin-card {
-            background: #fff9e6;
-            border: 2px dashed #f0ad4e;
-            grid-column: 1 / -1;
-        }
-
-        .admin-card h2 {
-            color: #ff9800;
-            border-bottom-color: #ff9800;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-
-        th {
-            background: #f5f5f5;
-            font-weight: 600;
             color: #333;
         }
 
@@ -508,69 +438,6 @@
                 </div>
             </div>
 
-            <!-- Admin Panel -->
-            <div class="card admin-card">
-                <h2>⚙️ ควบคุมระบบ</h2>
-                
-                <div class="tabs">
-                    <button class="tab active" data-tab="add-service">เพิ่มบริการใหม่</button>
-                    <button class="tab" data-tab="manage">จัดการบริการ</button>
-                    <button class="tab" data-tab="bookings">ดูการจองคิว</button>
-                </div>
-
-                <!-- เพิ่มบริการ -->
-                <div id="add-service" class="tab-content active">
-                    <form id="serviceForm">
-                        <div class="form-group">
-                            <label for="serviceName">ชื่อบริการ *</label>
-                            <input type="text" id="serviceName" placeholder="เช่น ตัดผม, นวด, ปรึกษา" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="serviceDesc">รายละเอียด *</label>
-                            <textarea id="serviceDesc" placeholder="อธิบายบริการนี้..." required></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="servicePrice">ราคา (บาท) *</label>
-                            <input type="number" id="servicePrice" step="0.01" placeholder="0.00" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="serviceDuration">ระยะเวลา (นาที) *</label>
-                            <input type="number" id="serviceDuration" placeholder="30" min="15" required>
-                        </div>
-
-                        <button type="submit">เพิ่มบริการ</button>
-                    </form>
-                </div>
-
-                <!-- จัดการบริการ -->
-                <div id="manage" class="tab-content">
-                    <div id="servicesManage">
-                        <p style="color: #999;">ไม่มีบริการที่จัดการได้</p>
-                    </div>
-                </div>
-
-                <!-- ดูการจองคิว -->
-                <div id="bookings" class="tab-content">
-                    <div id="bookingsList" style="display: none;">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>ชื่อ</th>
-                                    <th>บริการ</th>
-                                    <th>วัน เวลา</th>
-                                    <th>เบอร์โทร</th>
-                                    <th>จัดการ</th>
-                                </tr>
-                            </thead>
-                            <tbody id="bookingsBody"></tbody>
-                        </table>
-                    </div>
-                    <p id="noBookings" style="color: #999;">ไม่มีการจองคิว</p>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -1178,7 +1045,6 @@
         }
 
         // Event Listeners
-        document.getElementById('serviceForm').addEventListener('submit', addService);
         document.getElementById('bookingForm').addEventListener('submit', submitBooking);
         document.getElementById('serviceSelect').addEventListener('change', updateSummary);
         document.getElementById('appointmentDate').addEventListener('change', updateSummary);
@@ -1195,80 +1061,20 @@
             }
         });
 
-        // Tabs
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                const tabName = tab.dataset.tab;
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                tab.classList.add('active');
-                document.getElementById(tabName).classList.add('active');
-                
-                if (tabName === 'bookings') loadBookings();
-            });
-        });
-
         function setMinDate() {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('appointmentDate').min = today;
         }
 
-        async function addService(e) {
-            e.preventDefault();
-
-            const name = document.getElementById('serviceName').value.trim();
-            const desc = document.getElementById('serviceDesc').value.trim();
-            const price = parseFloat(document.getElementById('servicePrice').value);
-            const duration = parseInt(document.getElementById('serviceDuration').value);
-
-            if (!name || !desc || !price || !duration) {
-                alert('กรุณากรอกข้อมูลให้ครบ');
-                return;
-            }
-
-            const service = {
-                id: Date.now(),
-                name,
-                desc,
-                price,
-                duration
-            };
-
-            services.push(service);
-            localStorage.setItem('services', JSON.stringify(services));
-
-            // ส่งไป Google Sheets (ถ้าตั้ง URL ไว้)
-            if (googleSheetURL) {
-                try {
-                    await fetch(googleSheetURL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'addService', ...service })
-                    });
-                    console.log('Service saved to Google Sheets');
-                } catch (err) {
-                    console.error('Error saving service to Google Sheets:', err);
-                }
-            }
-
-            document.getElementById('serviceForm').reset();
-            loadServices();
-            showSuccess('เพิ่มบริการสำเร็จ');
-        }
-
         function loadServices() {
             const select = document.getElementById('serviceSelect');
             const list = document.getElementById('servicesList');
-            const manage = document.getElementById('servicesManage');
 
             select.innerHTML = '<option value="">-- เลือกบริการ --</option>';
             list.innerHTML = '';
-            manage.innerHTML = '';
 
             if (services.length === 0) {
                 list.innerHTML = '<p style="color: #999; text-align: center;">ยังไม่มีบริการ</p>';
-                manage.innerHTML = '<p style="color: #999;">ยังไม่มีบริการ</p>';
                 return;
             }
 
@@ -1289,59 +1095,7 @@
                     <span class="service-price">฿${service.price.toFixed(2)}</span>
                 `;
                 list.appendChild(item);
-
-                // Management list
-                const manageItem = document.createElement('div');
-                manageItem.className = 'service-item';
-                manageItem.innerHTML = `
-                    <h3>${service.name}</h3>
-                    <p>${service.desc}</p>
-                    <p style="color: #667eea; font-weight: 600;">฿${service.price.toFixed(2)} • ${service.duration} นาที</p>
-                    <div style="display: flex; gap: 8px; margin-top: 10px;">
-                        <button style="background: #e0e0e0; color: #333;" onclick="editService(${service.id})">แก้ไข</button>
-                        <button class="btn-delete" onclick="deleteService(${service.id})">ลบ</button>
-                    </div>
-                `;
-                manage.appendChild(manageItem);
             });
-        }
-
-        function editService(id) {
-            const service = services.find(s => s.id === id);
-            if (service) {
-                document.getElementById('serviceName').value = service.name;
-                document.getElementById('serviceDesc').value = service.desc;
-                document.getElementById('servicePrice').value = service.price;
-                document.getElementById('serviceDuration').value = service.duration;
-                deleteService(id);
-                document.querySelector('[data-tab="add-service"]').click();
-                document.getElementById('serviceName').focus();
-            }
-        }
-
-        async function deleteService(id) {
-            if (confirm('ต้องการลบบริการนี้หรือไม่?')) {
-                services = services.filter(s => s.id !== id);
-                localStorage.setItem('services', JSON.stringify(services));
-
-                // ลบจาก Google Sheets (ถ้าตั้ง URL ไว้)
-                if (googleSheetURL) {
-                    try {
-                        await fetch(googleSheetURL, {
-                            method: 'POST',
-                            mode: 'no-cors',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ action: 'deleteService', id: id })
-                        });
-                        console.log('Service deleted from Google Sheets');
-                    } catch (err) {
-                        console.error('Error deleting service from Google Sheets:', err);
-                    }
-                }
-
-                loadServices();
-                showSuccess('ลบบริการสำเร็จ');
-            }
         }
 
         function updateSummary() {
@@ -1428,70 +1182,6 @@
             submitBtn.disabled = false;
 
             showSuccess('✓ จองคิวสำเร็จแล้ว!');
-        }
-
-        function loadBookings() {
-            const list = document.getElementById('bookingsList');
-            const noMsg = document.getElementById('noBookings');
-            const body = document.getElementById('bookingsBody');
-
-            if (bookings.length === 0) {
-                list.style.display = 'none';
-                noMsg.style.display = 'block';
-                return;
-            }
-
-            body.innerHTML = '';
-            bookings.forEach((booking, index) => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${booking.name}</td>
-                    <td>${booking.serviceName}</td>
-                    <td>${booking.date} ${booking.time}</td>
-                    <td><small>${booking.phone}<br>${booking.email}</small></td>
-                    <td><button class="btn-delete" onclick="cancelBooking(${index})">ยกเลิก</button></td>
-                `;
-                body.appendChild(row);
-            });
-
-            list.style.display = 'block';
-            noMsg.style.display = 'none';
-        }
-
-        async function cancelBooking(index) {
-            const booking = bookings[index];
-            if (!booking) return;
-
-            if (!confirm(`ต้องการยกเลิกนัดหมาย?\n\nชื่อ: ${booking.name}\nบริการ: ${booking.serviceName}\nวันที่: ${booking.date} เวลา ${booking.time}`)) {
-                return;
-            }
-
-            // ลบจาก localStorage
-            bookings.splice(index, 1);
-            localStorage.setItem('bookings', JSON.stringify(bookings));
-
-            // ส่งไป Google Sheets เพื่อยกเลิก (ถ้าตั้ง URL ไว้)
-            if (googleSheetURL) {
-                try {
-                    await fetch(googleSheetURL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: 'cancelBooking',
-                            email: booking.email,
-                            date: booking.date,
-                            time: booking.time
-                        })
-                    });
-                    console.log('Booking cancelled in Google Sheets');
-                } catch (err) {
-                    console.error('Error cancelling booking in Google Sheets:', err);
-                }
-            }
-
-            loadBookings();
-            showSuccess('ยกเลิกนัดหมายสำเร็จ');
         }
 
         function showSuccess(msg) {
