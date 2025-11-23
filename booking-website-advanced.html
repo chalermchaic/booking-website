@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจองคิว</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-delete {
+            background: #ff6b6b;
+            padding: 6px 12px;
+            font-size: 0.9em;
+        }
+
+        .btn-delete:hover {
+            background: #ff5252;
+        }
+
+        .time-slots {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .time-slot {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            background: white;
+            transition: all 0.3s;
+        }
+
+        .time-slot:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .time-slot.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .service-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 15px;
+        }
+
+        .service-item h3 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .service-item p {
+            color: #666;
+            font-size: 0.95em;
+            margin-bottom: 10px;
+        }
+
+        .service-price {
+            color: #667eea;
+            font-size: 1.4em;
+            font-weight: 700;
+        }
+
+        .success-msg {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #28a745;
+            display: none;
+        }
+
+        .success-msg.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .summary {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+
+        .summary.show {
+            display: block;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            border: none;
+            background: none;
+            color: #666;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .admin-card {
+            background: #fff9e6;
+            border: 2px dashed #f0ad4e;
+            grid-column: 1 / -1;
+        }
+
+        .admin-card h2 {
+            color: #ff9800;
+            border-bottom-color: #ff9800;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 2em;
+            }
+
+            .time-slots {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 ระบบจองคิว</h1>
+            <p>จองบริการของคุณได้ง่าย ๆ เพียงไม่กี่ขั้นตอน</p>
+        </header>
+
+        <div class="main-content">
+            <!-- ฟอร์มจองคิว -->
+            <div class="card">
+                <h2>📅 จองคิวใหม่</h2>
+                <div class="success-msg" id="bookingSuccess">✓ จองคิวสำเร็จ!</div>
+                
+                <form id="bookingForm">
+                    <div class="form-group">
+                        <label for="clientName">ชื่อของคุณ *</label>
+                        <input type="text" id="clientName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="clientPhone">เบอร์โทรศัพท์ *</label>
+                        <input type="tel" id="clientPhone" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="clientEmail">อีเมล *</label>
+                        <input type="email" id="clientEmail" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="serviceSelect">เลือกบริการ *</label>
+                        <select id="serviceSelect" required>
+                            <option value="">-- เลือกบริการ --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="appointmentDate">วันที่ *</label>
+                        <input type="date" id="appointmentDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>เวลา *</label>
+                        <div class="time-slots" id="timeSlots">
+                            <button type="button" class="time-slot" data-time="09:00">09:00</button>
+                            <button type="button" class="time-slot" data-time="10:00">10:00</button>
+                            <button type="button" class="time-slot" data-time="11:00">11:00</button>
+                            <button type="button" class="time-slot" data-time="14:00">14:00</button>
+                            <button type="button" class="time-slot" data-time="15:00">15:00</button>
+                            <button type="button" class="time-slot" data-time="16:00">16:00</button>
+                        </div>
+                        <input type="hidden" id="selectedTime">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="clientNotes">หมายเหตุ</label>
+                        <textarea id="clientNotes" placeholder="ข้อมูลเพิ่มเติม..."></textarea>
+                    </div>
+
+                    <div class="summary" id="appointmentSummary">
+                        <strong>📋 สรุปการจองคิว</strong>
+                        <div class="summary-row">
+                            <span>บริการ:</span>
+                            <strong id="summaryService">-</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span>วัน เวลา:</span>
+                            <strong id="summaryDateTime">-</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span>ระยะเวลา:</span>
+                            <strong id="summaryDuration">-</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span>ราคา:</span>
+                            <strong id="summaryPrice">-</strong>
+                        </div>
+                    </div>
+
+                    <button type="submit">จองคิว</button>
+                </form>
+            </div>
+
+            <!-- แสดงบริการและราคา -->
+            <div class="card">
+                <h2>💼 บริการของเรา</h2>
+                <div id="servicesList">
+                    <p style="color: #999; text-align: center;">ยังไม่มีบริการ</p>
+                </div>
+            </div>
+
+            <!-- Admin Panel -->
+            <div class="card admin-card">
+                <h2>⚙️ ควบคุมระบบ</h2>
+                
+                <div class="tabs">
+                    <button class="tab active" data-tab="add-service">เพิ่มบริการใหม่</button>
+                    <button class="tab" data-tab="manage">จัดการบริการ</button>
+                    <button class="tab" data-tab="bookings">ดูการจองคิว</button>
+                </div>
+
+                <!-- เพิ่มบริการ -->
+                <div id="add-service" class="tab-content active">
+                    <form id="serviceForm">
+                        <div class="form-group">
+                            <label for="serviceName">ชื่อบริการ *</label>
+                            <input type="text" id="serviceName" placeholder="เช่น ตัดผม, นวด, ปรึกษา" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="serviceDesc">รายละเอียด *</label>
+                            <textarea id="serviceDesc" placeholder="อธิบายบริการนี้..." required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="servicePrice">ราคา (บาท) *</label>
+                            <input type="number" id="servicePrice" step="0.01" placeholder="0.00" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="serviceDuration">ระยะเวลา (นาที) *</label>
+                            <input type="number" id="serviceDuration" placeholder="30" min="15" required>
+                        </div>
+
+                        <button type="submit">เพิ่มบริการ</button>
+                    </form>
+                </div>
+
+                <!-- จัดการบริการ -->
+                <div id="manage" class="tab-content">
+                    <div id="servicesManage">
+                        <p style="color: #999;">ไม่มีบริการที่จัดการได้</p>
+                    </div>
+                </div>
+
+                <!-- ดูการจองคิว -->
+                <div id="bookings" class="tab-content">
+                    <div id="bookingsList" style="display: none;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ชื่อ</th>
+                                    <th>บริการ</th>
+                                    <th>วัน เวลา</th>
+                                    <th>เบอร์โทร</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bookingsBody"></tbody>
+                        </table>
+                    </div>
+                    <p id="noBookings" style="color: #999;">ไม่มีการจองคิว</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let services = JSON.parse(localStorage.getItem('services')) || [];
+        let bookings = JSON.parse(localStorage.getItem('bookings')) || [];
+        let selectedTime = null;
+        let googleSheetURL = ''; // ใส่ URL ของ Google Apps Script ตรงนี้
+
+        // ⚠️ วิธีหา Google Apps Script URL:
+        // 1. ไปที่ script.editor.google.com
+        // 2. Copy code ด้านล่างนี้ลงไป
+        // 3. Deploy → New Deployment → Web App
+        // 4. Copy URL ที่ได้มาใส่ตรงนี้
+        
+        // ⬇️ Code สำหรับ Google Apps Script:
+        /*
+        function doPost(e) {
+          var sheet = SpreadsheetApp.openById('YOUR_SHEET_ID').getSheetByName('Bookings');
+          var data = JSON.parse(e.postData.contents);
+          
+          sheet.appendRow([
+            new Date(),
+            data.name,
+            data.phone,
+            data.email,
+            data.serviceName,
+            data.date,
+            data.time,
+            data.notes
+          ]);
+          
+          // ส่ง Email ให้ลูกค้า
+          MailApp.sendEmail(
+            data.email,
+            '✓ การจองคิวสำเร็จ - ' + data.serviceName,
+            'สวัสดี ' + data.name + '\n\n' +
+            'การจองคิวของคุณสำเร็จแล้ว\n\n' +
+            'บริการ: ' + data.serviceName + '\n' +
+            'วัน เวลา: ' + data.date + ' เวลา ' + data.time + '\n' +
+            'ระยะเวลา: ' + data.duration + ' นาที\n' +
+            'ราคา: ฿' + data.price + '\n\n' +
+            'ขอบคุณที่ใช้บริการของเรา!'
+          );
+          
+          return ContentService.createTextOutput(JSON.stringify({status: "success"}))
+            .setMimeType(ContentService.MimeType.JSON);
+        }
+        */
+
+        // Initialize
+        loadServices();
+        setMinDate();
+
+        // Event Listeners
+        document.getElementById('serviceForm').addEventListener('submit', addService);
+        document.getElementById('bookingForm').addEventListener('submit', submitBooking);
+        document.getElementById('serviceSelect').addEventListener('change', updateSummary);
+        document.getElementById('appointmentDate').addEventListener('change', updateSummary);
+
+        // Time slots
+        document.getElementById('timeSlots').addEventListener('click', (e) => {
+            if (e.target.classList.contains('time-slot')) {
+                e.preventDefault();
+                document.querySelectorAll('.time-slot').forEach(btn => btn.classList.remove('selected'));
+                e.target.classList.add('selected');
+                selectedTime = e.target.dataset.time;
+                document.getElementById('selectedTime').value = selectedTime;
+                updateSummary();
+            }
+        });
+
+        // Tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tabName).classList.add('active');
+                
+                if (tabName === 'bookings') loadBookings();
+            });
+        });
+
+        function setMinDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('appointmentDate').min = today;
+        }
+
+        function addService(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('serviceName').value.trim();
+            const desc = document.getElementById('serviceDesc').value.trim();
+            const price = parseFloat(document.getElementById('servicePrice').value);
+            const duration = parseInt(document.getElementById('serviceDuration').value);
+
+            if (!name || !desc || !price || !duration) {
+                alert('กรุณากรอกข้อมูลให้ครบ');
+                return;
+            }
+
+            const service = {
+                id: Date.now(),
+                name,
+                desc,
+                price,
+                duration
+            };
+
+            services.push(service);
+            localStorage.setItem('services', JSON.stringify(services));
+            
+            document.getElementById('serviceForm').reset();
+            loadServices();
+            showSuccess('เพิ่มบริการสำเร็จ');
+        }
+
+        function loadServices() {
+            const select = document.getElementById('serviceSelect');
+            const list = document.getElementById('servicesList');
+            const manage = document.getElementById('servicesManage');
+
+            select.innerHTML = '<option value="">-- เลือกบริการ --</option>';
+            list.innerHTML = '';
+            manage.innerHTML = '';
+
+            if (services.length === 0) {
+                list.innerHTML = '<p style="color: #999; text-align: center;">ยังไม่มีบริการ</p>';
+                manage.innerHTML = '<p style="color: #999;">ยังไม่มีบริการ</p>';
+                return;
+            }
+
+            services.forEach(service => {
+                // Select dropdown
+                const opt = document.createElement('option');
+                opt.value = service.id;
+                opt.text = `${service.name} - ฿${service.price}`;
+                select.appendChild(opt);
+
+                // Display list
+                const item = document.createElement('div');
+                item.className = 'service-item';
+                item.innerHTML = `
+                    <h3>${service.name}</h3>
+                    <p>${service.desc}</p>
+                    <span style="color: #999; font-size: 0.9em;">⏱ ${service.duration} นาที</span><br>
+                    <span class="service-price">฿${service.price.toFixed(2)}</span>
+                `;
+                list.appendChild(item);
+
+                // Management list
+                const manageItem = document.createElement('div');
+                manageItem.className = 'service-item';
+                manageItem.innerHTML = `
+                    <h3>${service.name}</h3>
+                    <p>${service.desc}</p>
+                    <p style="color: #667eea; font-weight: 600;">฿${service.price.toFixed(2)} • ${service.duration} นาที</p>
+                    <div style="display: flex; gap: 8px; margin-top: 10px;">
+                        <button style="background: #e0e0e0; color: #333;" onclick="editService(${service.id})">แก้ไข</button>
+                        <button class="btn-delete" onclick="deleteService(${service.id})">ลบ</button>
+                    </div>
+                `;
+                manage.appendChild(manageItem);
+            });
+        }
+
+        function editService(id) {
+            const service = services.find(s => s.id === id);
+            if (service) {
+                document.getElementById('serviceName').value = service.name;
+                document.getElementById('serviceDesc').value = service.desc;
+                document.getElementById('servicePrice').value = service.price;
+                document.getElementById('serviceDuration').value = service.duration;
+                deleteService(id);
+                document.querySelector('[data-tab="add-service"]').click();
+                document.getElementById('serviceName').focus();
+            }
+        }
+
+        function deleteService(id) {
+            if (confirm('ต้องการลบบริการนี้หรือไม่?')) {
+                services = services.filter(s => s.id !== id);
+                localStorage.setItem('services', JSON.stringify(services));
+                loadServices();
+                showSuccess('ลบบริการสำเร็จ');
+            }
+        }
+
+        function updateSummary() {
+            const serviceId = document.getElementById('serviceSelect').value;
+            const date = document.getElementById('appointmentDate').value;
+            
+            if (serviceId && date && selectedTime) {
+                const service = services.find(s => s.id == serviceId);
+                const dateObj = new Date(date + 'T00:00:00');
+                const dateStr = dateObj.toLocaleDateString('th-TH', { weekday: 'short', month: 'short', day: 'numeric' });
+                
+                document.getElementById('summaryService').textContent = service.name;
+                document.getElementById('summaryDateTime').textContent = `${dateStr} เวลา ${selectedTime}`;
+                document.getElementById('summaryDuration').textContent = `${service.duration} นาที`;
+                document.getElementById('summaryPrice').textContent = `฿${service.price.toFixed(2)}`;
+                document.getElementById('appointmentSummary').classList.add('show');
+            } else {
+                document.getElementById('appointmentSummary').classList.remove('show');
+            }
+        }
+
+        async function submitBooking(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('clientName').value.trim();
+            const phone = document.getElementById('clientPhone').value.trim();
+            const email = document.getElementById('clientEmail').value.trim();
+            const serviceId = document.getElementById('serviceSelect').value;
+            const date = document.getElementById('appointmentDate').value;
+            const notes = document.getElementById('clientNotes').value.trim();
+
+            if (!name || !phone || !email || !serviceId || !date || !selectedTime) {
+                alert('กรุณากรอกข้อมูลให้ครบ');
+                return;
+            }
+
+            const submitBtn = document.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.textContent;
+            submitBtn.textContent = 'กำลังบันทึก...';
+            submitBtn.disabled = true;
+
+            const service = services.find(s => s.id == serviceId);
+
+            const booking = {
+                name,
+                phone,
+                email,
+                serviceName: service.name,
+                date,
+                time: selectedTime,
+                notes,
+                price: service.price,
+                duration: service.duration
+            };
+
+            // บันทึกใน localStorage
+            bookings.push(booking);
+            localStorage.setItem('bookings', JSON.stringify(bookings));
+
+            // ส่งไปยัง Google Sheet (ถ้าตั้ง URL ไว้)
+            if (googleSheetURL) {
+                try {
+                    await fetch(googleSheetURL, {
+                        method: 'POST',
+                        mode: 'no-cors', // สำคัญ: ป้องกัน CORS error
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(booking)
+                    });
+                    console.log('Sent to Google Sheet');
+                } catch (err) {
+                    console.error('Error sending to Google Sheet:', err);
+                    // ไม่ block การทำงานถ้าส่งไม่ผ่าน
+                }
+            }
+
+            document.getElementById('bookingForm').reset();
+            selectedTime = null;
+            document.querySelectorAll('.time-slot').forEach(btn => btn.classList.remove('selected'));
+            document.getElementById('appointmentSummary').classList.remove('show');
+            
+            submitBtn.textContent = originalBtnText;
+            submitBtn.disabled = false;
+
+            showSuccess('✓ จองคิวสำเร็จแล้ว!');
+        }
+
+        function loadBookings() {
+            const list = document.getElementById('bookingsList');
+            const noMsg = document.getElementById('noBookings');
+            const body = document.getElementById('bookingsBody');
+
+            if (bookings.length === 0) {
+                list.style.display = 'none';
+                noMsg.style.display = 'block';
+                return;
+            }
+
+            body.innerHTML = '';
+            bookings.forEach(booking => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${booking.name}</td>
+                    <td>${booking.serviceName}</td>
+                    <td>${booking.date} ${booking.time}</td>
+                    <td><small>${booking.phone}<br>${booking.email}</small></td>
+                `;
+                body.appendChild(row);
+            });
+
+            list.style.display = 'block';
+            noMsg.style.display = 'none';
+        }
+
+        function showSuccess(msg) {
+            const el = document.getElementById('bookingSuccess');
+            el.textContent = msg;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>
