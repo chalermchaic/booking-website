@@ -297,6 +297,83 @@
                 grid-template-columns: repeat(2, 1fr);
             }
         }
+
+        /* Cancel Page Styles */
+        .cancel-page {
+            display: none;
+        }
+
+        .cancel-page.show {
+            display: block;
+        }
+
+        .cancel-page .card {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .cancel-page .booking-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .cancel-page .booking-details p {
+            margin: 10px 0;
+            color: #333;
+        }
+
+        .cancel-page .booking-details strong {
+            color: #667eea;
+        }
+
+        .btn-cancel-confirm {
+            background: #dc3545;
+            margin-right: 10px;
+        }
+
+        .btn-cancel-confirm:hover {
+            background: #c82333;
+        }
+
+        .btn-back {
+            background: #6c757d;
+        }
+
+        .btn-back:hover {
+            background: #5a6268;
+        }
+
+        .cancel-success {
+            color: #28a745;
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .cancel-error {
+            color: #dc3545;
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -306,7 +383,48 @@
             <p>จองบริการของคุณได้ง่าย ๆ เพียงไม่กี่ขั้นตอน</p>
         </header>
 
-        <div class="main-content">
+        <!-- หน้ายกเลิกการจอง (แสดงเมื่อคลิก cancel link จากอีเมล) -->
+        <div id="cancelPage" class="cancel-page">
+            <div class="card">
+                <div id="cancelLoading">
+                    <div class="loading-spinner"></div>
+                    <p>กำลังโหลดข้อมูลการจอง...</p>
+                </div>
+
+                <div id="cancelContent" style="display: none;">
+                    <h2>ยกเลิกการจอง</h2>
+                    <p>คุณต้องการยกเลิกการจองนี้หรือไม่?</p>
+
+                    <div class="booking-details">
+                        <p><strong>ชื่อ:</strong> <span id="cancelName">-</span></p>
+                        <p><strong>บริการ:</strong> <span id="cancelService">-</span></p>
+                        <p><strong>วันที่:</strong> <span id="cancelDate">-</span></p>
+                        <p><strong>เวลา:</strong> <span id="cancelTime">-</span></p>
+                        <p><strong>ราคา:</strong> <span id="cancelPrice">-</span></p>
+                    </div>
+
+                    <button class="btn-cancel-confirm" onclick="confirmCancel()">ยืนยันยกเลิก</button>
+                    <button class="btn-back" onclick="goBackToMain()">กลับหน้าหลัก</button>
+                </div>
+
+                <div id="cancelSuccess" style="display: none;">
+                    <div class="cancel-success">✓</div>
+                    <h2>ยกเลิกการจองสำเร็จ</h2>
+                    <p>การจองของคุณถูกยกเลิกเรียบร้อยแล้ว</p>
+                    <p>คุณจะได้รับอีเมลยืนยันการยกเลิกในไม่ช้า</p>
+                    <button class="btn-back" onclick="goBackToMain()">กลับหน้าหลัก</button>
+                </div>
+
+                <div id="cancelError" style="display: none;">
+                    <div class="cancel-error">✕</div>
+                    <h2>ไม่พบการจอง</h2>
+                    <p id="cancelErrorMsg">ลิงก์ไม่ถูกต้องหรือการจองถูกยกเลิกไปแล้ว</p>
+                    <button class="btn-back" onclick="goBackToMain()">กลับหน้าหลัก</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="mainContent" class="main-content">
             <!-- ฟอร์มจองคิว -->
             <div class="card">
                 <h2>📅 จองคิวใหม่</h2>
@@ -476,12 +594,28 @@
 
         var SHEET_ID = 'YOUR_SHEET_ID'; // ใส่ ID ของ Google Sheet
         var ADMIN_EMAIL = 'admin@example.com'; // ใส่อีเมลแอดมินที่ต้องการรับแจ้งเตือน
+        var WEBSITE_URL = 'https://your-website.com'; // ใส่ URL เว็บไซต์ของคุณ (สำหรับ cancel link)
+
+        // สร้าง unique token 32 ตัวอักษร
+        function generateToken() {
+          var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+          var token = '';
+          for (var i = 0; i < 32; i++) {
+            token += chars.charAt(Math.floor(Math.random() * chars.length));
+          }
+          return token;
+        }
 
         function doGet(e) {
           var action = e.parameter.action;
 
           if (action === 'getServices') {
             return getServices();
+          }
+
+          // ดึงข้อมูลการจองด้วย token
+          if (action === 'getBooking') {
+            return getBookingByToken(e.parameter.token);
           }
 
           return ContentService.createTextOutput(JSON.stringify({error: "Invalid action"}))
@@ -495,7 +629,9 @@
           if (action === 'addBooking') {
             return addBooking(data);
           } else if (action === 'cancelBooking') {
-            return cancelBooking(data);
+            return cancelBooking(data); // สำหรับ Admin (ใช้ email+date+time)
+          } else if (action === 'cancelBookingByToken') {
+            return cancelBookingByToken(data.token); // สำหรับลูกค้า (ใช้ token)
           } else if (action === 'addService') {
             return addService(data);
           } else if (action === 'updateService') {
@@ -511,6 +647,8 @@
         // ===== BOOKING FUNCTIONS =====
         function addBooking(data) {
           var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Bookings');
+          var token = generateToken(); // สร้าง unique token สำหรับการยกเลิก
+          var cancelLink = WEBSITE_URL + '?cancel=' + token;
 
           sheet.appendRow([
             new Date(),
@@ -522,20 +660,26 @@
             data.time,
             data.notes,
             data.price,
-            data.duration
+            data.duration,
+            token // Column K - เก็บ token สำหรับยกเลิก
           ]);
 
-          // ส่ง Email ให้ลูกค้า
+          // ส่ง Email ให้ลูกค้า (พร้อม cancel link)
           try {
             MailApp.sendEmail(
               data.email,
               '✓ การจองคิวสำเร็จ - ' + data.serviceName,
               'สวัสดี ' + data.name + '\n\n' +
               'การจองคิวของคุณสำเร็จแล้ว\n\n' +
-              'บริการ: ' + data.serviceName + '\n' +
-              'วัน เวลา: ' + data.date + ' เวลา ' + data.time + '\n' +
-              'ระยะเวลา: ' + data.duration + ' นาที\n' +
-              'ราคา: ฿' + data.price + '\n\n' +
+              '📋 รายละเอียดการจอง:\n' +
+              '• บริการ: ' + data.serviceName + '\n' +
+              '• วัน เวลา: ' + data.date + ' เวลา ' + data.time + '\n' +
+              '• ระยะเวลา: ' + data.duration + ' นาที\n' +
+              '• ราคา: ฿' + data.price + '\n\n' +
+              '---\n\n' +
+              '❌ หากต้องการยกเลิกการจอง กรุณาคลิกลิงก์นี้:\n' +
+              cancelLink + '\n\n' +
+              '(ลิงก์นี้ใช้ได้เฉพาะการจองนี้เท่านั้น กรุณาเก็บไว้เป็นความลับ)\n\n' +
               'ขอบคุณที่ใช้บริการของเรา!'
             );
           } catch(err) {
@@ -564,7 +708,7 @@
             console.log('Admin email error: ' + err);
           }
 
-          return ContentService.createTextOutput(JSON.stringify({status: "success"}))
+          return ContentService.createTextOutput(JSON.stringify({status: "success", token: token}))
             .setMimeType(ContentService.MimeType.JSON);
         }
 
@@ -619,6 +763,112 @@
               ADMIN_EMAIL,
               '⚠️ มีการยกเลิกนัดหมาย - ' + cancelledBooking.serviceName,
               '❌ มีการยกเลิกนัดหมาย!\n\n' +
+              '👤 ชื่อลูกค้า: ' + cancelledBooking.name + '\n' +
+              '📱 เบอร์โทร: ' + cancelledBooking.phone + '\n' +
+              '📧 อีเมล: ' + cancelledBooking.email + '\n\n' +
+              '💼 บริการ: ' + cancelledBooking.serviceName + '\n' +
+              '📆 วันที่: ' + cancelledBooking.date + '\n' +
+              '⏰ เวลา: ' + cancelledBooking.time + '\n\n' +
+              '---\n' +
+              'ข้อมูลนี้ถูกลบออกจาก Google Sheets แล้ว'
+            );
+          } catch(err) {
+            console.log('Admin cancel email error: ' + err);
+          }
+
+          return ContentService.createTextOutput(JSON.stringify({status: "success"}))
+            .setMimeType(ContentService.MimeType.JSON);
+        }
+
+        // ===== TOKEN-BASED BOOKING FUNCTIONS (สำหรับลูกค้า) =====
+        // ดึงข้อมูลการจองด้วย token
+        function getBookingByToken(token) {
+          if (!token) {
+            return ContentService.createTextOutput(JSON.stringify({status: "error", message: "Token required"}))
+              .setMimeType(ContentService.MimeType.JSON);
+          }
+
+          var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Bookings');
+          var dataRange = sheet.getDataRange().getValues();
+
+          // หา booking ที่ตรงกับ token (Column K = index 10)
+          for (var i = 1; i < dataRange.length; i++) {
+            if (dataRange[i][10] == token) {
+              return ContentService.createTextOutput(JSON.stringify({
+                status: "success",
+                booking: {
+                  name: dataRange[i][1],
+                  phone: dataRange[i][2],
+                  email: dataRange[i][3],
+                  serviceName: dataRange[i][4],
+                  date: dataRange[i][5],
+                  time: dataRange[i][6],
+                  notes: dataRange[i][7],
+                  price: dataRange[i][8],
+                  duration: dataRange[i][9]
+                }
+              })).setMimeType(ContentService.MimeType.JSON);
+            }
+          }
+
+          return ContentService.createTextOutput(JSON.stringify({status: "error", message: "Booking not found"}))
+            .setMimeType(ContentService.MimeType.JSON);
+        }
+
+        // ยกเลิกการจองด้วย token (สำหรับลูกค้า)
+        function cancelBookingByToken(token) {
+          if (!token) {
+            return ContentService.createTextOutput(JSON.stringify({status: "error", message: "Token required"}))
+              .setMimeType(ContentService.MimeType.JSON);
+          }
+
+          var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Bookings');
+          var dataRange = sheet.getDataRange().getValues();
+          var cancelledBooking = null;
+
+          // หา booking ที่ตรงกับ token (Column K = index 10)
+          for (var i = 1; i < dataRange.length; i++) {
+            if (dataRange[i][10] == token) {
+              cancelledBooking = {
+                name: dataRange[i][1],
+                phone: dataRange[i][2],
+                email: dataRange[i][3],
+                serviceName: dataRange[i][4],
+                date: dataRange[i][5],
+                time: dataRange[i][6]
+              };
+              sheet.deleteRow(i + 1);
+              break;
+            }
+          }
+
+          if (!cancelledBooking) {
+            return ContentService.createTextOutput(JSON.stringify({status: "error", message: "Booking not found or already cancelled"}))
+              .setMimeType(ContentService.MimeType.JSON);
+          }
+
+          // ส่ง Email แจ้งลูกค้าว่ายกเลิกสำเร็จ
+          try {
+            MailApp.sendEmail(
+              cancelledBooking.email,
+              '❌ ยกเลิกการจองคิวสำเร็จ - ' + cancelledBooking.serviceName,
+              'สวัสดี ' + cancelledBooking.name + '\n\n' +
+              'การจองคิวของคุณได้ถูกยกเลิกแล้ว\n\n' +
+              'บริการ: ' + cancelledBooking.serviceName + '\n' +
+              'วัน เวลา: ' + cancelledBooking.date + ' เวลา ' + cancelledBooking.time + '\n\n' +
+              'หากต้องการจองใหม่ กรุณาเข้าเว็บไซต์ของเรา\n\n' +
+              'ขอบคุณครับ/ค่ะ'
+            );
+          } catch(err) {
+            console.log('Customer cancel email error: ' + err);
+          }
+
+          // ส่ง Email แจ้งแอดมินว่ามีการยกเลิก
+          try {
+            MailApp.sendEmail(
+              ADMIN_EMAIL,
+              '⚠️ ลูกค้ายกเลิกนัดหมาย - ' + cancelledBooking.serviceName,
+              '❌ ลูกค้ายกเลิกนัดหมายเอง (ผ่านลิงก์ในอีเมล)\n\n' +
               '👤 ชื่อลูกค้า: ' + cancelledBooking.name + '\n' +
               '📱 เบอร์โทร: ' + cancelledBooking.phone + '\n' +
               '📧 อีเมล: ' + cancelledBooking.email + '\n\n' +
@@ -798,8 +1048,8 @@
           if (!bookingsSheet) {
             bookingsSheet = ss.insertSheet('Bookings');
           }
-          bookingsSheet.getRange(1, 1, 1, 10).setValues([[
-            'Timestamp', 'Name', 'Phone', 'Email', 'Service', 'Date', 'Time', 'Notes', 'Price', 'Duration'
+          bookingsSheet.getRange(1, 1, 1, 11).setValues([[
+            'Timestamp', 'Name', 'Phone', 'Email', 'Service', 'Date', 'Time', 'Notes', 'Price', 'Duration', 'Token'
           ]]);
 
           // สร้าง Services sheet
@@ -815,15 +1065,96 @@
         */
 
         // Initialize
+        let cancelToken = null; // token สำหรับยกเลิก (จาก URL)
         initializeApp();
         setMinDate();
 
         async function initializeApp() {
-            // โหลดบริการจาก Google Sheets ก่อน (ถ้ามี URL)
-            if (googleSheetURL) {
-                await loadServicesFromSheet();
+            // ตรวจสอบว่ามี cancel token ใน URL หรือไม่
+            const urlParams = new URLSearchParams(window.location.search);
+            cancelToken = urlParams.get('cancel');
+
+            if (cancelToken) {
+                // แสดงหน้ายกเลิกการจอง
+                document.getElementById('mainContent').style.display = 'none';
+                document.getElementById('cancelPage').classList.add('show');
+                await loadBookingForCancel(cancelToken);
+            } else {
+                // โหลดบริการจาก Google Sheets ก่อน (ถ้ามี URL)
+                if (googleSheetURL) {
+                    await loadServicesFromSheet();
+                }
+                loadServices();
             }
-            loadServices();
+        }
+
+        // ===== CANCEL PAGE FUNCTIONS =====
+        async function loadBookingForCancel(token) {
+            if (!googleSheetURL) {
+                showCancelError('ระบบยังไม่ได้ตั้งค่า Google Sheets');
+                return;
+            }
+
+            try {
+                const response = await fetch(googleSheetURL + '?action=getBooking&token=' + encodeURIComponent(token));
+                const result = await response.json();
+
+                if (result.status === 'success' && result.booking) {
+                    // แสดงข้อมูลการจอง
+                    document.getElementById('cancelName').textContent = result.booking.name;
+                    document.getElementById('cancelService').textContent = result.booking.serviceName;
+                    document.getElementById('cancelDate').textContent = result.booking.date;
+                    document.getElementById('cancelTime').textContent = result.booking.time;
+                    document.getElementById('cancelPrice').textContent = '฿' + result.booking.price;
+
+                    document.getElementById('cancelLoading').style.display = 'none';
+                    document.getElementById('cancelContent').style.display = 'block';
+                } else {
+                    showCancelError(result.message || 'ไม่พบการจอง');
+                }
+            } catch (err) {
+                console.error('Error loading booking:', err);
+                showCancelError('ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่');
+            }
+        }
+
+        async function confirmCancel() {
+            if (!cancelToken || !googleSheetURL) return;
+
+            const btn = document.querySelector('.btn-cancel-confirm');
+            btn.disabled = true;
+            btn.textContent = 'กำลังยกเลิก...';
+
+            try {
+                await fetch(googleSheetURL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'cancelBookingByToken',
+                        token: cancelToken
+                    })
+                });
+
+                // เนื่องจาก no-cors ไม่ได้รับ response จึงต้องสมมติว่าสำเร็จ
+                document.getElementById('cancelContent').style.display = 'none';
+                document.getElementById('cancelSuccess').style.display = 'block';
+            } catch (err) {
+                console.error('Error cancelling:', err);
+                btn.disabled = false;
+                btn.textContent = 'ยืนยันยกเลิก';
+                alert('เกิดข้อผิดพลาด กรุณาลองใหม่');
+            }
+        }
+
+        function showCancelError(message) {
+            document.getElementById('cancelLoading').style.display = 'none';
+            document.getElementById('cancelErrorMsg').textContent = message;
+            document.getElementById('cancelError').style.display = 'block';
+        }
+
+        function goBackToMain() {
+            window.location.href = window.location.pathname;
         }
 
         async function loadServicesFromSheet() {
