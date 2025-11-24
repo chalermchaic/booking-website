@@ -12,7 +12,7 @@
 
 ### 1.2 Upload ไฟล์
 1. ไปที่ **https://app.netlify.com/drop**
-2. **Drag and drop** ไฟล์ `booking-website-advanced.html` ลงในช่องขนาดใหญ่
+2. **Drag and drop** ไฟล์ `booking-website.html` ลงในช่องขนาดใหญ่
 3. รอสักครู่
 4. จะได้ URL เช่น: `https://tiny-number.netlify.app`
 
@@ -144,7 +144,7 @@ var sheet = SpreadsheetApp.openById('1ABC23XYZ4567def')
 ## ⭐ STEP 4: เชื่อมเว็บกับ Google Sheets (ใช้เวลา 5 นาที)
 
 ### 4.1 แก้ไขไฟล์ HTML
-1. ดาวน์โหลด `booking-website-advanced.html`
+1. ดาวน์โหลด `booking-website.html`
 2. เปิดด้วย **Notepad++ หรือ Visual Studio Code**
 3. หาบรรทัดนี้ (ประมาณบรรทัด 380):
    ```javascript

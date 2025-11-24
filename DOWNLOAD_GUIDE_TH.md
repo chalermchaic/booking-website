@@ -15,12 +15,11 @@
    - **Mac:** Double-click ไฟล์
    - **Linux:** `unzip Booking-Website-Complete.zip`
 
-3. **ผลลัพธ์:** โฟลเดอร์ที่มีไฟล์ 5 อยู่:
+3. **ผลลัพธ์:** โฟลเดอร์ที่มีไฟล์:
    ```
    📁 Booking-Website-Complete/
    ├── 📄 README.md (อ่านตรงนี้ก่อน!)
-   ├── 📄 booking-website.html (พื้นฐาน)
-   ├── 📄 booking-website-advanced.html (แนะนำ)
+   ├── 📄 booking-website.html (หลัก)
    ├── 📄 SETUP_GUIDE_STEP_BY_STEP_TH.md (ขั้นตอนละเอียด)
    └── 📄 DEPLOYMENT_GUIDE_TH.md (เลือก Strategy)
    ```
@@ -47,24 +46,15 @@
 ⏱️ เวลาตั้ง: 5 นาที
 ```
 
-#### **3️⃣ booking-website-advanced.html** (แนะนำ)
-```
-📄 ความยาว: 28 KB
-📌 สำหรับ: ต้องการใช้นาน ๆ, ข้อมูลไม่หาย
-✅ ข้อดี: เชื่อม Google Sheets, ส่ง Email อัตโนมัติ
-⏱️ เวลาตั้ง: 30-45 นาที
-📖 ต้องอ่าน: SETUP_GUIDE_STEP_BY_STEP_TH.md
-```
-
-#### **4️⃣ SETUP_GUIDE_STEP_BY_STEP_TH.md** (สำคัญ!)
+#### **3️⃣ SETUP_GUIDE_STEP_BY_STEP_TH.md** (สำคัญ!)
 ```
 📄 ความยาว: 13 KB
-📌 บรรยาย: ขั้นตอนการตั้ง advanced.html ทีละขั้น
-📖 ต้องอ่าน: ก่อนตั้ง advanced version
+📌 บรรยาย: ขั้นตอนการตั้งค่า booking-website.html ทีละขั้น
+📖 ต้องอ่าน: ก่อนตั้งค่า
 ⏱️ เวลาอ่าน: 10 นาที (อ่านให้เข้าใจ)
 ```
 
-#### **5️⃣ DEPLOYMENT_GUIDE_TH.md** (เลือก Strategy)
+#### **4️⃣ DEPLOYMENT_GUIDE_TH.md** (เลือก Strategy)
 ```
 📄 ความยาว: 12 KB
 📌 บรรยาย: เปรียบเทียบ 3 วิธีในการใช้งานจริง
@@ -98,7 +88,7 @@
 3. อ่าน README.md ก่อน
 4. อ่าน DEPLOYMENT_GUIDE_TH.md เพื่อเลือก Strategy
 5. ตามขั้นตอน SETUP_GUIDE_STEP_BY_STEP_TH.md
-6. ใช้ booking-website-advanced.html
+6. ใช้ booking-website.html
 
 ---
 
@@ -139,9 +129,8 @@
 ```
 1️⃣ README.md
 2️⃣ booking-website.html
-3️⃣ booking-website-advanced.html
-4️⃣ SETUP_GUIDE_STEP_BY_STEP_TH.md
-5️⃣ DEPLOYMENT_GUIDE_TH.md
+3️⃣ SETUP_GUIDE_STEP_BY_STEP_TH.md
+4️⃣ DEPLOYMENT_GUIDE_TH.md
 ```
 
 ---
